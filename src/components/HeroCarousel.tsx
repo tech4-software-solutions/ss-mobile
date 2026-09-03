@@ -28,7 +28,7 @@ export default function HeroCarousel({ onShopNow }: HeroCarouselProps) {
       id: p.id,
       title: p.name,
       subtitle: `${p.brand} · ${p.description.slice(0, 60)}...`,
-      cta: "Shop Now",
+      cta: "Shop Now -",
       image: p.image,
       badge: p.discount ? `${p.discount}% OFF` : "New Arrival",
       action: "shop" as const,
