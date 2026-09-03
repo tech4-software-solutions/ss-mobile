@@ -27,6 +27,16 @@ html, body, #root {
   font-family: 'Inter', sans-serif;
 }
 
+body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
 .font-display { font-family: 'Outfit', sans-serif; }
 .font-body { font-family: 'Inter', sans-serif; }
 

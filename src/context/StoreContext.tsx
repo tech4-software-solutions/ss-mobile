@@ -6,6 +6,7 @@ import {
   brands as fallbackBrands,
   reviews as fallbackReviews,
 } from "../data/store";
+import { useAuth } from "./AuthContext";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 
 interface StoreContextValue {
@@ -108,6 +109,7 @@ function mapOrder(row: Record<string, unknown>, items: OrderItem[] = []): Order 
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const { session, isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>(fallbackProducts);
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
   const [brands, setBrands] = useState<Brand[]>(fallbackBrands);
@@ -124,14 +126,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const [prodRes, catRes, brandRes, reviewRes, promoRes, hoursRes, ordersRes] = await Promise.all([
+    const publicRequests = [
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("sort_order"),
       supabase.from("brands").select("*").order("sort_order"),
       supabase.from("reviews").select("*").order("sort_order"),
-      supabase.from("promo_codes").select("*").order("created_at", { ascending: false }),
       supabase.from("store_hours").select("*").order("sort_order"),
-      supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
+    ];
+
+    const adminRequests = isAdmin && session
+      ? [
+          supabase.from("promo_codes").select("*").order("created_at", { ascending: false }),
+          supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
+        ]
+      : [Promise.resolve({ data: [] as Record<string, unknown>[] | null, error: null }), Promise.resolve({ data: [] as Record<string, unknown>[] | null, error: null })];
+
+    const [prodRes, catRes, brandRes, reviewRes, hoursRes, promoRes, ordersRes] = await Promise.all([
+      ...publicRequests,
+      ...adminRequests,
     ]);
 
     if (prodRes.data?.length) setProducts(prodRes.data.map(mapProduct));
@@ -184,11 +196,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(false);
-  }, []);
+  }, [isAdmin, session]);
 
   const fetchAdminPromos = useCallback(async () => {
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase || !session || !isAdmin) {
+      setPromoCodes([]);
+      return;
+    }
     const { data } = await supabase.from("promo_codes").select("*").order("created_at", { ascending: false });
     if (data?.length) {
       setPromoCodes(data.map((p) => ({
@@ -203,18 +218,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return;
     }
     setPromoCodes([]);
-  }, []);
+  }, [isAdmin, session]);
 
   const fetchAdminOrders = useCallback(async () => {
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase || !session || !isAdmin) {
+      setOrders([]);
+      return;
+    }
     const { data } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
     if (data?.length) {
       setOrders(data.map((row) => mapOrder(row, (row.order_items as Record<string, unknown>[] | null)?.map(mapOrderItem) || [])));
       return;
     }
     setOrders([]);
-  }, []);
+  }, [isAdmin, session]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     const supabase = getSupabase();
@@ -227,7 +245,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [fetchAdminOrders]);
 
   useEffect(() => {
-    fetchAll();
+    void fetchAll();
   }, [fetchAll]);
 
   useEffect(() => {
