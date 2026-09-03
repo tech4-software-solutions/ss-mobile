@@ -68,12 +68,16 @@ export default function HeroCarousel({ onShopNow }: HeroCarouselProps) {
       <div
         className="absolute inset-0 transition-transform duration-700"
         style={{
-          backgroundImage: `url(${current.image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
           transform: isAnimating ? "scale(1.04)" : "scale(1)",
         }}
-      />
+      >
+        <img
+          src={current.image}
+          alt=""
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center"
+        />
+      </div>
       <div className="absolute inset-0 cinematic-overlay" />
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 via-transparent to-transparent" />
 

@@ -262,10 +262,13 @@ function AboutSection({ reviews }: { reviews: { id: string; name: string; rating
             <div key={review.id} className="p-5 rounded-2xl surface-card animate-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  src={feedbackImages[review.imageKey]}
+                  src={feedbackImages[review.imageKey] || feedback1}
                   alt={review.name}
                   className="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-forest/30"
                   style={{ objectPosition: "top" }}
+                  onError={(event) => {
+                    event.currentTarget.src = feedback1;
+                  }}
                 />
                 <div>
                   <p className="font-display font-semibold text-charcoal text-sm">{review.name}</p>
